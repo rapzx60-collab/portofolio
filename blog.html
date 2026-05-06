@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Semua Artikel | RapzzStore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-white text-gray-900 antialiased min-w-[1280px] overflow-x-auto pt-24">
+
+    <div id="loading-layar" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-500">
+        <i class="fas fa-robot text-gray-950 text-8xl mb-10 animate-bounce"></i>
+        <div class="flex space-x-4">
+            <div class="w-4 h-4 bg-gray-950 rounded-full animate-ping"></div>
+            <div class="w-4 h-4 bg-gray-950 rounded-full animate-ping" style="animation-delay: 0.2s;"></div>
+            <div class="w-4 h-4 bg-gray-950 rounded-full animate-ping" style="animation-delay: 0.4s;"></div>
+        </div>
+        <span class="text-gray-950 mt-10 text-sm font-black uppercase tracking-[0.5em] ml-2">Memuat Modul</span>
+    </div>
+
+    <nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+        <div class="flex justify-between items-center py-5 px-16 max-w-7xl mx-auto">
+            <div class="text-2xl font-black tracking-tighter text-gray-950">Developer</div>
+            <div class="flex items-center space-x-10 text-sm font-semibold text-gray-500">
+                <a href="index.html" class="transisi-ai hover:text-gray-950 transition">Beranda</a>
+                <a href="tentang.html" class="transisi-ai hover:text-gray-950 transition">Tentang</a>
+                <a href="proyek.html" class="transisi-ai hover:text-gray-950 transition">Proyek</a>
+                <a href="#" class="text-gray-950 transition font-bold cursor-default">Blog</a>
+            </div>
+            <a href="kontak.html" class="transisi-ai bg-gray-950 text-white px-7 py-3 rounded-full text-xs font-bold hover:bg-gray-800 transition shadow-sm">
+                Hubungi Saya
+            </a>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-16 pt-16 pb-12 text-center">
+        <h1 class="text-5xl font-black text-gray-900 mb-4">Semua Artikel</h1>
+        <p class="text-gray-500 text-sm">Kumpulan Artikel Terbaru</p>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-16 mb-12 flex justify-between items-center">
+        <div class="relative w-96">
+            <i class="fas fa-search absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="searchInput" placeholder="Cari judul artikel..." class="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-full border border-gray-200 focus:outline-none focus:border-gray-950 text-sm transition-all">
+        </div>
+        <div class="flex space-x-2" id="filterContainer">
+            <button onclick="filterBlog('Semua')" class="filter-btn bg-gray-950 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition">Semua</button>
+            <button onclick="filterBlog('Teknologi')" class="filter-btn text-gray-500 hover:text-gray-950 px-6 py-2.5 rounded-full text-sm font-semibold transition">Teknologi</button>
+            <button onclick="filterBlog('Tips')" class="filter-btn text-gray-500 hover:text-gray-950 px-6 py-2.5 rounded-full text-sm font-semibold transition">Tips</button>
+            <button onclick="filterBlog('Tutorial')" class="filter-btn text-gray-500 hover:text-gray-950 px-6 py-2.5 rounded-full text-sm font-semibold transition">Tutorial</button>
+            <button onclick="filterBlog('Desain')" class="filter-btn text-gray-500 hover:text-gray-950 px-6 py-2.5 rounded-full text-sm font-semibold transition">Desain</button>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-16 pb-32">
+        <div id="container-blog" class="grid grid-cols-2 gap-12">
+            </div>
+        <div id="no-results" class="hidden text-center py-20 text-gray-400 font-medium">
+            Artikel tidak ditemukan...
+        </div>
+    </div>
+
+    <script src="database-blog.js"></script>
+
+    <script>
+        // ==========================================
+        // FUNGSI LOADING SCREEN HANYA UNTUK PINDAH HALAMAN
+        // ==========================================
+        document.addEventListener('click', function(event) {
+            const link = event.target.closest('a.transisi-ai');
+            
+            if (link) {
+                if (event.ctrlKey || event.metaKey) return;
+
+                event.preventDefault(); 
+                
+                const tujuanUrl = link.getAttribute('href');
+                const layarLoading = document.getElementById('loading-layar');
+
+                layarLoading.classList.remove('opacity-0', 'pointer-events-none');
+                layarLoading.classList.add('opacity-100');
+
+                setTimeout(() => {
+                    window.location.href = tujuanUrl;
+                }, 600);
+            }
+        });
+
+        // ==========================================
+        // FIX: MENGATASI STUCK SAAT TOMBOL KEMBALI (BACK)
+        // ==========================================
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                const layarLoading = document.getElementById('loading-layar');
+                if (layarLoading) {
+                    layarLoading.classList.remove('opacity-100');
+                    layarLoading.classList.add('opacity-0', 'pointer-events-none');
+                }
+            }
+        });
+
+        // ==========================================
+        // LOGIKA RENDER BLOG
+        // ==========================================
+        const container = document.getElementById('container-blog');
+        const searchInput = document.getElementById('searchInput');
+        const noResults = document.getElementById('no-results');
+
+        function renderBlog(data) {
+            container.innerHTML = "";
+            if (data.length === 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                data.forEach(post => {
+                    container.innerHTML += `
+                        <div class="bg-white rounded-[40px] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-100 flex flex-col group">
+                            
+                            <div style="background-color: ${post.warna}" class="h-64 flex items-center justify-center p-12 text-center text-white font-black text-3xl relative">
+                                <span class="absolute top-6 right-8 text-xs tracking-[0.2em] uppercase opacity-70 font-bold">${post.kategori}</span>
+                                <h3 class="leading-tight drop-shadow-sm">${post.judulBanner}</h3>
+                            </div>
+                            
+                            <div class="p-12 flex flex-col flex-grow">
+                                <div class="flex items-center space-x-4 mb-6 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    <span>${post.tanggal}</span><span>•</span><span>${post.durasi}</span>
+                                </div>
+                                
+                                <h4 class="text-3xl font-bold mb-6 text-gray-900 group-hover:text-gray-700 transition">${post.judulArtikel}</h4>
+                                
+                                <p class="text-gray-500 text-lg mb-12 leading-relaxed flex-grow line-clamp-3">${post.deskripsi}</p>
+                                
+                                <a href="artikel.html?id=${post.id}" class="transisi-ai mt-auto w-full py-5 border-2 border-gray-100 rounded-2xl text-xs font-bold uppercase tracking-widest text-gray-500 hover:bg-gray-950 hover:text-white hover:border-gray-950 active:bg-gray-950 active:text-white transition-all flex items-center justify-center space-x-3">
+                                    <span>Baca Selengkapnya</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // Fungsi Cari
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            const filtered = databaseBlog.filter(p => p.judulArtikel.toLowerCase().includes(val));
+            renderBlog(filtered);
+        });
+
+        // Fungsi Filter Kategori
+        function filterBlog(cat) {
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-gray-950', 'text-white');
+                btn.classList.add('text-gray-500');
+            });
+            
+            const clickedBtn = Array.from(buttons).find(b => b.innerText.trim() === cat);
+            if(clickedBtn) {
+                clickedBtn.classList.remove('text-gray-500');
+                clickedBtn.classList.add('bg-gray-950', 'text-white');
+            }
+
+            if (cat === 'Semua') {
+                renderBlog(databaseBlog);
+            } else {
+                const filtered = databaseBlog.filter(p => p.kategori === cat);
+                renderBlog(filtered);
+            }
+        }
+
+        // Render pertama kali
+        renderBlog(databaseBlog);
+    </script>
+</body>
+</html>
